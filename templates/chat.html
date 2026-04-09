@@ -22,6 +22,9 @@
             text-align: left;
             color: green;
         }
+        button {
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -30,35 +33,75 @@
 
 <div id="chat-box"></div>
 
-<form id="chat-form">
-    {% csrf_token %}
-    <input type="text" id="message" placeholder="Type message..." required>
-    <button type="submit">Send</button>
-</form>
+<input type="text" id="message" placeholder="Type message..." required>
 
 <br>
+
+<button onclick="sendMessage()">Send</button>
+<button onclick="getSentiment()">Sentiment</button>
+<button onclick="getSummary()">Summary</button>
+
+<br><br>
+
 <a href="/logout/">Logout</a>
 
 <script>
-document.getElementById("chat-form").onsubmit = function(e) {
-    e.preventDefault();
-
-    let message = document.getElementById("message").value;
+function appendMessage(sender, text) {
     let chatBox = document.getElementById("chat-box");
 
-    // Show user message
-    chatBox.innerHTML += `<p class="user">You: ${message}</p>`;
+    if (sender === "user") {
+        chatBox.innerHTML += `<p class="user">You: ${text}</p>`;
+    } else {
+        chatBox.innerHTML += `<p class="bot">Bot: ${text}</p>`;
+    }
 
-    // Send request to backend
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function sendMessage() {
+    let message = document.getElementById("message").value;
+    if (!message) return;
+
+    appendMessage("user", message);
+
     fetch(`/chat/get-response/?message=${message}`)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-        chatBox.innerHTML += `<p class="bot">Bot: ${data.response}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight; // auto scroll
+        appendMessage("bot", data.response);
     });
 
     document.getElementById("message").value = "";
-};
+}
+
+function getSentiment() {
+    let message = document.getElementById("message").value;
+    if (!message) return;
+
+    appendMessage("user", message);
+
+    fetch(`/chat/sentiment/?message=${message}`)
+    .then(res => res.json())
+    .then(data => {
+        appendMessage("bot", "Sentiment: " + data.response);
+    });
+
+    document.getElementById("message").value = "";
+}
+
+function getSummary() {
+    let message = document.getElementById("message").value;
+    if (!message) return;
+
+    appendMessage("user", message);
+
+    fetch(`/chat/summary/?message=${message}`)
+    .then(res => res.json())
+    .then(data => {
+        appendMessage("bot", "Summary: " + data.response);
+    });
+
+    document.getElementById("message").value = "";
+}
 </script>
 
 </body>
