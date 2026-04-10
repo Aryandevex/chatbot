@@ -1,20 +1,65 @@
+import os
+from huggingface_hub import InferenceClient
 from transformers import pipeline
 
-# Models
+# -------------------------------
+# Local chatbot model
+# -------------------------------
 chatbot = pipeline("text-generation", model="gpt2")
-sentiment_pipeline = pipeline("sentiment-analysis")
-summarizer = pipeline("summarization")
 
-def get_ai_response(message):
-    result = chatbot(message, max_length=50, num_return_sequences=1)
-    return result[0]['generated_text']
+# -------------------------------
+# HuggingFace client
+# -------------------------------
+client = InferenceClient(
+    provider="hf-inference",
+    api_key=os.environ.get("HF_TOKEN"),
+)
+
+# -------------------------------
+# Chatbot with CONTEXT support
+# -------------------------------
+def get_ai_response(context):
+    result = chatbot(
+        context,
+        max_length=120,
+        num_return_sequences=1,
+        do_sample=True,
+        temperature=0.7
+    )
+
+    output = result[0]["generated_text"]
+
+    # return only latest bot reply
+    if "Bot:" in output:
+        return output.split("Bot:")[-1].strip()
+
+    return output.strip()
 
 
+# -------------------------------
+# Sentiment Analysis
+# -------------------------------
 def get_sentiment(message):
-    result = sentiment_pipeline(message)[0]
-    return f"{result['label']} ({round(result['score'], 2)})"
+    result = client.text_classification(
+        message,
+        model="finiteautomata/bertweet-base-sentiment-analysis",
+    )
+
+    top = result[0]
+
+    return {
+        "label": top["label"],
+        "score": round(top["score"], 2)
+    }
 
 
+# -------------------------------
+# Summarization
+# -------------------------------
 def get_summary(message):
-    result = summarizer(message, max_length=50, min_length=10, do_sample=False)
-    return result[0]['summary_text']
+    result = client.summarization(
+        message,
+        model="csebuetnlp/mT5_multilingual_XLSum",
+    )
+
+    return result.summary_text

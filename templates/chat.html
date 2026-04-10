@@ -1,106 +1,202 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chatbot</title>
+    <title>AI Chatbot</title>
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
+
+        .chat-container {
+            width: 420px;
+            height: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #4a90e2;
+            color: white;
+            padding: 15px;
+            border-radius: 12px 12px 0 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
         #chat-box {
-            width: 400px;
-            height: 400px;
-            border: 1px solid #ccc;
-            overflow-y: scroll;
-            padding: 10px;
-            margin-bottom: 10px;
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
         .user {
-            text-align: right;
-            color: blue;
+            align-self: flex-end;
+            background: #4a90e2;
+            color: white;
         }
+
         .bot {
-            text-align: left;
-            color: green;
+            align-self: flex-start;
+            background: #e5e7eb;
+            color: black;
         }
+
+        .input-area {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
         button {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .send-btn {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .secondary-btn {
+            background: #f1f1f1;
+        }
+
+        .logout {
+            text-align: center;
+            font-size: 12px;
             margin-top: 5px;
+        }
+
+        .logout a {
+            text-decoration: none;
+            color: #888;
         }
     </style>
 </head>
 <body>
 
-<h2>Chatbot</h2>
+<div class="chat-container">
 
-<div id="chat-box"></div>
+    <div class="header">AI Chatbot</div>
 
-<input type="text" id="message" placeholder="Type message..." required>
+    <div id="chat-box"></div>
 
-<br>
+    <div class="input-area">
 
-<button onclick="sendMessage()">Send</button>
-<button onclick="getSentiment()">Sentiment</button>
-<button onclick="getSummary()">Summary</button>
+        <div class="input-row">
+            <input type="text" id="message" placeholder="Type your message...">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
 
-<br><br>
+        <div class="input-row">
+            <button class="secondary-btn" onclick="getSentiment()">Sentiment</button>
+            <button class="secondary-btn" onclick="getSummary()">Summary</button>
+        </div>
 
-<a href="/logout/">Logout</a>
+        <div class="logout">
+            <a href="/logout/">Logout</a>
+        </div>
+
+    </div>
+
+</div>
 
 <script>
 function appendMessage(sender, text) {
     let chatBox = document.getElementById("chat-box");
 
-    if (sender === "user") {
-        chatBox.innerHTML += `<p class="user">You: ${text}</p>`;
-    } else {
-        chatBox.innerHTML += `<p class="bot">Bot: ${text}</p>`;
-    }
+    let msg = document.createElement("div");
+    msg.classList.add("message");
+    msg.classList.add(sender);
 
+    msg.innerText = text;
+
+    chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function sendMessage() {
-    let message = document.getElementById("message").value;
+    let input = document.getElementById("message");
+    let message = input.value.trim();
     if (!message) return;
 
     appendMessage("user", message);
 
-    fetch(`/chat/get-response/?message=${message}`)
+    fetch(`/chat/get-response/?message=${encodeURIComponent(message)}`)
     .then(res => res.json())
     .then(data => {
         appendMessage("bot", data.response);
     });
 
-    document.getElementById("message").value = "";
+    input.value = "";
 }
 
 function getSentiment() {
-    let message = document.getElementById("message").value;
+    let input = document.getElementById("message");
+    let message = input.value.trim();
     if (!message) return;
 
     appendMessage("user", message);
 
-    fetch(`/chat/sentiment/?message=${message}`)
+    fetch(`/chat/sentiment/?message=${encodeURIComponent(message)}`)
     .then(res => res.json())
     .then(data => {
         appendMessage("bot", "Sentiment: " + data.response);
     });
 
-    document.getElementById("message").value = "";
+    input.value = "";
 }
 
 function getSummary() {
-    let message = document.getElementById("message").value;
+    let input = document.getElementById("message");
+    let message = input.value.trim();
     if (!message) return;
 
     appendMessage("user", message);
 
-    fetch(`/chat/summary/?message=${message}`)
+    fetch(`/chat/summary/?message=${encodeURIComponent(message)}`)
     .then(res => res.json())
     .then(data => {
         appendMessage("bot", "Summary: " + data.response);
     });
 
-    document.getElementById("message").value = "";
+    input.value = "";
 }
 </script>
 
