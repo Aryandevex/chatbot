@@ -1,39 +1,33 @@
 import os
 from huggingface_hub import InferenceClient
-from transformers import pipeline
-
-# -------------------------------
-# Local chatbot model
-# -------------------------------
-chatbot = pipeline("text-generation", model="gpt2")
 
 # -------------------------------
 # HuggingFace client
 # -------------------------------
-client = InferenceClient(
-    provider="hf-inference",
-    api_key=os.environ.get("HF_TOKEN"),
-)
+token = os.environ.get("HF_TOKEN")
+if not token:
+    print("WARNING: HF_TOKEN not found in environment!")
+
+client = InferenceClient(api_key=token)
 
 # -------------------------------
-# Chatbot with CONTEXT support
+# Chatbot with MISTRAL-7B support
 # -------------------------------
-def get_ai_response(context):
-    result = chatbot(
-        context,
-        max_length=120,
-        num_return_sequences=1,
-        do_sample=True,
-        temperature=0.7
-    )
-
-    output = result[0]["generated_text"]
-
-    # return only latest bot reply
-    if "Bot:" in output:
-        return output.split("Bot:")[-1].strip()
-
-    return output.strip()
+def get_ai_response(messages):
+    global client
+    try:
+        # Switching to a slightly larger version (7B) which is more consistently 
+        # supported on the HuggingFace Chat Completion API.
+        completion = client.chat_completion(
+            model="Qwen/Qwen2.5-7B-Instruct",
+            messages=messages,
+            max_tokens=200,
+            temperature=0.7,
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"AI Error: {repr(e)}")
+        return "I'm having trouble thinking right now. Please try again later."
 
 
 # -------------------------------
